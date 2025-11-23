@@ -15,13 +15,16 @@ import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { TwoFactorAuthService } from '../twofa/twofactor.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private readonly twoFAService: TwoFactorAuthService,
   ) {}
 
   @Post('register')
@@ -45,6 +48,23 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   login(@Body() { email, password }: LoginDto) {
     return this.authService.login(email, password);
+  }
+
+  @Post('login/2fa')
+  login2FA(@Body() { email, code }: { email: string; code: string }) {
+    return this.authService.login2FA(email, code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('2fa/generate')
+  generate2FA(@Req() { user }) {
+    return this.authService.generate2FASecret(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('2fa/enable')
+  enable2FA(@Req() { user }, @Body() { code }) {
+    return this.authService.enable2FA(user.id, code);
   }
 
   @Get('google')
@@ -98,5 +118,11 @@ export class AuthController {
   @Get('logout')
   logout(@Res() res: Response) {
     res.clearCookie('access_token').json({ message: 'Sesión cerrada' });
+  }
+
+  
+  @Post('2fa/verify')
+  verify2FA(@Body() { userId, code }: { userId: string; code: string }) {
+    return this.twoFAService.verifyCode(userId, code);
   }
 }

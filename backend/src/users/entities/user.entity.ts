@@ -47,6 +47,12 @@ export class User {
   @Column({ nullable: true })
   googleId: string;
 
+  @Column({ default: false })
+  twoFactorEnabled: boolean;
+
+  @Column({ nullable: true })
+  twoFactorSecret: string;
+
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
@@ -62,5 +68,4 @@ export class User {
     eager: false,
   })
   contacts: Contact[];
-
 }

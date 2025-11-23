@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ContactsModule } from 'src/contacts/contacts.module';
+import { TwoFAModule } from 'src/twofa/twofactor.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ContactsModule } from 'src/contacts/contacts.module';
       }),
       inject: [ConfigService],
     }),
+    TwoFAModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, GoogleStrategy, JwtStrategy],

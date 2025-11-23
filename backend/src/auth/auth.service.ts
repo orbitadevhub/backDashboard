@@ -7,11 +7,11 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { AuthEntity } from './entity/auth.entity';
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
 
 function removeAccents(str: string): string {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 @Injectable()
@@ -21,6 +21,9 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
+  // -----------------------
+  // REGISTER
+  // -----------------------
   async register(
     email: string,
     password: string,
@@ -31,8 +34,9 @@ export class AuthService {
     const existUser = await this.usersService.findOneByEmail(email);
 
     if (existUser) {
-      throw new NotFoundException(`User with email ${email} alredy exist`);
+      throw new NotFoundException(`User with email ${email} already exist`);
     }
+
     const createdUser = await this.usersService.create({
       email: removeAccents(email.toLowerCase()),
       password,
@@ -44,25 +48,36 @@ export class AuthService {
     return createdUser;
   }
 
-  async login(email: string, password: string): Promise<AuthEntity> {
+  // -----------------------
+  // LOGIN (Paso 1)
+  // -----------------------
+  async login(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(
       removeAccents(email.toLowerCase())
     );
 
     if (user?.googleId) {
       throw new UnauthorizedException(
-        'This user has logged in with Google, please use Google login'
+        'This user logged in with Google. Use Google login.'
       );
     }
 
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
+
+    // Si tiene 2FA activado → requiere el código
+    if (user.twoFactorEnabled) {
+      return { requires2FA: true, email: user.email };
+    }
+
+    // Si NO tiene 2FA → login directo
     return {
       accessTocken: this.jwtService.sign({
         id: user.id,
@@ -73,6 +88,88 @@ export class AuthService {
     };
   }
 
+  // -----------------------
+  // LOGIN (Paso 2 con 2FA)
+  // -----------------------
+  async login2FA(email: string, code: string) {
+    const user = await this.usersService.findOneByEmail(email);
+
+    if (!user || !user.twoFactorEnabled) {
+      throw new UnauthorizedException('2FA is not enabled for this user');
+    }
+
+    const isValid = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    });
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    // Genera el JWT final
+    return {
+      accessTocken: this.jwtService.sign({
+        id: user.id,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        roles: user.roles || ['USER'],
+      }),
+    };
+  }
+
+  // -----------------------
+  // GENERAR SECRET + QR
+  // -----------------------
+  async generate2FASecret(userId: string) {
+    const user = await this.usersService.findOne(userId);
+
+    const secret = speakeasy.generateSecret({
+      name: `MiApp (${user.email})`,
+      length: 20,
+    });
+
+    user.twoFactorSecret = secret.base32;
+    await this.usersService.update(user.id, user);
+
+    const qr = await QRCode.toDataURL(secret.otpauth_url);
+
+    return {
+      secret: secret.base32,
+      otpauth_url: secret.otpauth_url,
+      qrCode: qr,
+    };
+  }
+
+  // -----------------------
+  // HABILITAR 2FA DEFINITIVO
+  // -----------------------
+  async enable2FA(userId: string, code: string) {
+    const user = await this.usersService.findOne(userId);
+
+    const isValid = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    });
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    user.twoFactorEnabled = true;
+    await this.usersService.update(user.id, user);
+
+    return { message: '2FA has been enabled successfully' };
+  }
+
+  // -----------------------
+  // GOOGLE LOGIN
+  // (sin tocar)
+  // -----------------------
   async findOrCreateGoogleUser(googleUser: {
     googleId: string;
     email: string;

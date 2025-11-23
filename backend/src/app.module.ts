@@ -8,6 +8,8 @@ import { ClientModule } from './client/client.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
+import { TwoFAModule } from './twofa/twofactor.module';
+
 
 
 
@@ -25,6 +27,7 @@ import { ContactsModule } from './contacts/contacts.module';
     UsersModule,
     AuthModule,
     ContactsModule,
+    TwoFAModule,
   ],
   controllers: [AppController],
   providers: [
