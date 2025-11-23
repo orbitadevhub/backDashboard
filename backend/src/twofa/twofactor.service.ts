@@ -1,0 +1,67 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import * as speakeasy from 'speakeasy';
+import * as qrcode from 'qrcode';
+import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
+
+@Injectable()
+export class TwoFactorAuthService {
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService
+  ) {}
+
+  async generateSecret(user: any) {
+    const secret = speakeasy.generateSecret({
+      name: `MiApp (${user.email})`,
+    });
+
+    await this.usersService.update(user.id, {
+      twoFactorSecret: secret.base32,
+    } as any);
+
+    const qrCode = await qrcode.toDataURL(secret.otpauth_url);
+
+    return {
+      secret: secret.base32,
+      qrCode,
+      otpauthUrl: secret.otpauth_url,
+    };
+  }
+
+  async enable2FA(user: any, code: string) {
+    const isValid = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+    });
+console.log(isValid);
+    if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
+    await this.usersService.update(user.id, {
+      isTwoFactorEnabled: true,
+    } as any);
+
+    return { message: '2FA Enabled!' };
+  }
+
+  async verifyCode(userId: string, code: string) {
+    const user = await this.usersService.findOne(userId);
+
+    const isValid = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+    });
+
+    if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
+
+    const token = this.jwtService.sign({
+      id: user.id,
+      email: user.email,
+      roles: user.roles,
+      isTwoFactorAuthenticated: true,
+    });
+
+    return { accessToken: token };
+  }
+}
