@@ -8,7 +8,6 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3001',
-      'https://easy-email-ai.vercel.app/dashboard',
     ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: [

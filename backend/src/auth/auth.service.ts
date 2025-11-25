@@ -134,6 +134,10 @@ export class AuthService {
     user.twoFactorSecret = secret.base32;
     await this.usersService.update(user.id, user);
 
+    if (!secret.otpauth_url) {
+      throw new NotFoundException('Failed to generate otpauth URL for 2FA');
+    }
+
     const qr = await QRCode.toDataURL(secret.otpauth_url);
 
     return {

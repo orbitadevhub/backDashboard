@@ -20,6 +20,7 @@ export class TwoFactorAuthService {
       twoFactorSecret: secret.base32,
     } as any);
 
+    if (!secret.otpauth_url) throw new Error('Failed to generate OTP auth URL');
     const qrCode = await qrcode.toDataURL(secret.otpauth_url);
 
     return {
@@ -30,16 +31,19 @@ export class TwoFactorAuthService {
   }
 
   async enable2FA(user: any, code: string) {
+    const freshUser = await this.usersService.findOne(user.id); // <-- NUEVO
+
     const isValid = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: freshUser.twoFactorSecret,
       encoding: 'base32',
       token: code,
     });
-console.log(isValid);
+
     if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
+
     await this.usersService.update(user.id, {
       isTwoFactorEnabled: true,
-    } as any);
+    });
 
     return { message: '2FA Enabled!' };
   }

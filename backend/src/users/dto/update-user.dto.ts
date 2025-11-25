@@ -24,4 +24,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   googleId?: string;
+
+  @IsOptional()
+  isTwoFactorEnabled?: boolean;
 }
