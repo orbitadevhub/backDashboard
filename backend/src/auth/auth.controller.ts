@@ -50,23 +50,6 @@ export class AuthController {
     return this.authService.login(email, password);
   }
 
-  @Post('login/2fa')
-  login2FA(@Body() { email, code }: { email: string; code: string }) {
-    return this.authService.login2FA(email, code);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('2fa/generate')
-  generate2FA(@Req() { user }) {
-    return this.authService.generate2FASecret(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('2fa/enable')
-  enable2FA(@Req() { user }, @Body() { code }) {
-    return this.authService.enable2FA(user.id, code);
-  }
-
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin() {}

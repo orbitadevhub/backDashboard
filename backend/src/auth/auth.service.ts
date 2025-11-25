@@ -6,7 +6,6 @@ import {
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { AuthEntity } from './entity/auth.entity';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
@@ -21,9 +20,6 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  // -----------------------
-  // REGISTER
-  // -----------------------
   async register(
     email: string,
     password: string,
@@ -48,9 +44,6 @@ export class AuthService {
     return createdUser;
   }
 
-  // -----------------------
-  // LOGIN (Paso 1)
-  // -----------------------
   async login(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(
       removeAccents(email.toLowerCase())
@@ -72,12 +65,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password');
     }
 
-    // Si tiene 2FA activado → requiere el código
     if (user.twoFactorEnabled) {
       return { requires2FA: true, email: user.email };
     }
 
-    // Si NO tiene 2FA → login directo
     return {
       accessTocken: this.jwtService.sign({
         id: user.id,
@@ -88,9 +79,6 @@ export class AuthService {
     };
   }
 
-  // -----------------------
-  // LOGIN (Paso 2 con 2FA)
-  // -----------------------
   async login2FA(email: string, code: string) {
     const user = await this.usersService.findOneByEmail(email);
 
@@ -109,7 +97,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid 2FA code');
     }
 
-    // Genera el JWT final
     return {
       accessTocken: this.jwtService.sign({
         id: user.id,
@@ -120,9 +107,6 @@ export class AuthService {
     };
   }
 
-  // -----------------------
-  // GENERAR SECRET + QR
-  // -----------------------
   async generate2FASecret(userId: string) {
     const user = await this.usersService.findOne(userId);
 
@@ -134,6 +118,10 @@ export class AuthService {
     user.twoFactorSecret = secret.base32;
     await this.usersService.update(user.id, user);
 
+    if (!secret.otpauth_url) {
+      throw new NotFoundException('Failed to generate otpauth URL for 2FA');
+    }
+
     const qr = await QRCode.toDataURL(secret.otpauth_url);
 
     return {
@@ -143,9 +131,6 @@ export class AuthService {
     };
   }
 
-  // -----------------------
-  // HABILITAR 2FA DEFINITIVO
-  // -----------------------
   async enable2FA(userId: string, code: string) {
     const user = await this.usersService.findOne(userId);
 
@@ -166,10 +151,6 @@ export class AuthService {
     return { message: '2FA has been enabled successfully' };
   }
 
-  // -----------------------
-  // GOOGLE LOGIN
-  // (sin tocar)
-  // -----------------------
   async findOrCreateGoogleUser(googleUser: {
     googleId: string;
     email: string;

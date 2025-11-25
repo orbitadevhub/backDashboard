@@ -8,7 +8,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3001',
-      'https://easy-email-ai.vercel.app/dashboard',
+
     ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: [
@@ -24,7 +24,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('Forms-APIs')
+    .setTitle('OrvitaDev-APIs')
     .setDescription(
       'Docs de API para clientes administradores de de Apps que emplean forms'
     )
