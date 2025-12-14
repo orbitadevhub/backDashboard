@@ -36,7 +36,7 @@ export class QremailService {
         filename: 'qrcode.png',
         content: base64Data,
         encoding: 'base64',
-        cid: 'qrcode', // 👈 referencia del img
+        cid: 'qrcode',
       },
     ],
   });
