@@ -1,52 +1,70 @@
-🔐 Secure Authentication API – NestJS + JWT + Mandatory 2FA
-<p align="center"> <a href="https://nestjs.com" target="_blank"> <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" /> </a> </p> <p align="center"> Secure backend authentication API built with <b>NestJS</b>, implementing <b>JWT</b> and <b>mandatory Two-Factor Authentication (2FA)</b>. </p> <p align="center"> <img src="https://img.shields.io/badge/NestJS-11-red" /> <img src="https://img.shields.io/badge/Security-2FA%20Mandatory-green" /> <img src="https://img.shields.io/badge/License-MIT-blue" /> </p>
-📌 Overview
+# 🔐 Secure Authentication API – NestJS + JWT + Mandatory 2FA
 
-This project is a production-grade authentication API built with Node.js and NestJS, implementing:
+<p align="center">
+  <a href="https://nestjs.com" target="_blank">
+    <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" />
+  </a>
+</p>
 
-JWT-based authentication
+<p align="center">
+  Secure backend authentication API built with <strong>NestJS</strong>, implementing
+  <strong>JWT</strong> and <strong>mandatory Two-Factor Authentication (2FA)</strong>.
+</p>
 
-Mandatory Two-Factor Authentication (2FA)
+<p align="center">
+  <img src="https://img.shields.io/badge/NestJS-11-red" />
+  <img src="https://img.shields.io/badge/Security-2FA%20Mandatory-green" />
+  <img src="https://img.shields.io/badge/License-MIT-blue" />
+</p>
 
-TOTP (RFC 6238)
+---
 
-QR delivery via email (SMTP)
+## 📌 Overview
 
-The authentication flow follows corporate and regulated system standards, commonly used in financial systems, SOC platforms, and critical infrastructure.
+This project is a **production-grade authentication API** built with **Node.js and NestJS**, implementing:
 
-🚀 Key Features
+* JWT-based authentication
+* Mandatory Two-Factor Authentication (2FA)
+* TOTP (RFC 6238)
+* QR delivery via email (SMTP)
 
-User registration and login
+The authentication flow follows **corporate and regulated system standards**, commonly used in:
 
-Mandatory 2FA for all users
+* Financial systems
+* SOC platforms
+* Critical infrastructure backends
 
-TOTP secret generation
+---
 
-QR code generation and email delivery
+## 🚀 Key Features
 
-OTP validation
+* User registration and login
+* **Mandatory 2FA for all users**
+* TOTP secret generation
+* QR code generation and email delivery
+* OTP validation
+* Temporary JWT (2FA pending)
+* Final JWT after OTP verification
+* Route protection using Guards
+* Modular and scalable NestJS architecture
+* OWASP-aligned security practices
 
-Temporary JWT (2FA pending)
+---
 
-Final JWT after OTP verification
+## 🧠 Authentication Architecture
 
-Route protection using Guards
+Authentication is split into **two enforced steps**:
 
-Modular and scalable NestJS architecture
+1. **Primary credentials** (email + password)
+2. **Second factor** (OTP via authenticator app)
 
-OWASP-aligned security practices
+> ⚠️ No final JWT is issued until **both factors** are validated.
 
-🧠 Authentication Architecture
+---
 
-Authentication is split into two enforced steps:
+## 🔄 Authentication Flow
 
-Primary credentials (email + password)
-
-Second factor (OTP from authenticator app)
-
-❗ No final JWT is issued until both factors are validated.
-
-🔄 Authentication Flow
+```
 User Registration
         ↓
 Login (email + password)
@@ -58,61 +76,66 @@ OTP Verification
 Final JWT
         ↓
 Access to protected endpoints
+```
 
-🔐 Main Endpoints
-Authentication
-Method	Endpoint	Description
-POST	/auth/register	User registration
-POST	/auth/login	Initial login (returns temporary token)
-POST	/auth/2fa/setup	Generates TOTP secret and sends QR by email
-POST	/auth/2fa/enable	Enables 2FA after OTP validation
-POST	/auth/2fa/verify-login	Verifies OTP and issues final JWT
-Protected Routes
+---
+
+## 🔐 Main Endpoints
+
+### Authentication
+
+| Method | Endpoint                 | Description                                 |
+| ------ | ------------------------ | ------------------------------------------- |
+| POST   | `/auth/register`         | User registration                           |
+| POST   | `/auth/login`            | Initial login (returns temporary token)     |
+| POST   | `/auth/2fa/setup`        | Generates TOTP secret and sends QR by email |
+| POST   | `/auth/2fa/enable`       | Enables 2FA after OTP validation            |
+| POST   | `/auth/2fa/verify-login` | Verifies OTP and issues final JWT           |
+
+---
+
+### 🔒 Protected Routes
 
 All business endpoints require:
 
-Valid JWT
+* Valid JWT
+* Completed 2FA process
 
-Completed 2FA process
-
+```ts
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
+```
 
-🛡️ Security Highlights
+---
 
-Temporary JWT with expiration
+## 🛡️ Security Highlights
 
-Final JWT only after OTP validation
+* Temporary JWT with expiration
+* Final JWT only after OTP validation
+* TOTP secrets never exposed via API
+* QR sent via email as inline attachment (CID)
+* Dedicated Guards for 2FA enforcement
+* Clear separation between authentication and authorization
 
-TOTP secrets never exposed via API
+---
 
-QR sent via email as inline attachment (CID)
+## 🧩 Tech Stack
 
-Dedicated Guards for 2FA enforcement
+* Node.js
+* NestJS
+* TypeScript
+* JWT
+* Passport.js
+* Speakeasy (TOTP)
+* Nodemailer (SMTP)
+* QRcode
 
-Clear separation between authentication and authorization
+---
 
-🧩 Tech Stack
+## ⚙️ Environment Variables
 
-Node.js
+Create a `.env` file at project root:
 
-NestJS
-
-TypeScript
-
-JWT
-
-Passport.js
-
-Speakeasy (TOTP)
-
-Nodemailer (SMTP)
-
-QRcode
-
-⚙️ Environment Variables
-
-Create a .env file at project root:
-
+```env
 PORT=3000
 
 JWT_SECRET=super_secret_key
@@ -123,50 +146,74 @@ MAIL_PORT=587
 MAIL_SECURE=false
 MAIL_USER=your_email@gmail.com
 MAIL_PASS=gmail_app_password
+```
 
+> ⚠️ Gmail **requires App Passwords** (regular passwords are not supported).
 
-⚠️ Gmail requires App Passwords (regular passwords are not supported).
+---
 
-▶️ Installation & Run
+## ▶️ Installation & Run
+
+```bash
 pnpm install
 pnpm start:dev
+```
 
+The API will be available at:
 
-Application will be available at:
-
+```
 http://localhost:3000
+```
 
-🧪 Basic Testing
-Initial Login
+---
+
+## 🧪 Basic Testing
+
+### Initial Login
+
+```http
 POST /auth/login
-
+```
 
 Response:
 
+```json
 {
   "twoFactorRequired": true,
   "tempToken": "JWT_TEMPORARY"
 }
+```
 
-OTP Verification
+---
+
+### OTP Verification
+
+```http
 POST /auth/2fa/verify-login
 Authorization: Bearer <TEMP_TOKEN>
-
+```
 
 Body:
 
+```json
 {
   "code": "123456"
 }
-
+```
 
 Response:
 
+```json
 {
   "accessToken": "JWT_FINAL"
 }
+```
 
-📁 Project Structure (Simplified)
+---
+
+## 📁 Project Structure (Simplified)
+
+```
 src/
 ├── auth/
 │   ├── guards/
@@ -181,38 +228,39 @@ src/
 │   ├── qremail.service.ts
 ├── users/
 ├── app.module.ts
+```
 
-🧠 Real-World Use Cases
+---
+
+## 🧠 Real-World Use Cases
 
 This architecture is suitable for:
 
-Financial platforms
+* Financial platforms
+* Corporate systems
+* Critical infrastructure
+* SOC / SIEM platforms
+* Regulated backends
 
-Corporate systems
+---
 
-Critical infrastructure
+## 🛣️ Roadmap
 
-SOC / SIEM platforms
+* Rate limiting for OTP attempts
+* Authentication audit logs
+* Refresh tokens
+* Trusted device support
+* 2FA reset and recovery flow
 
-Regulated backends
+---
 
-🛣️ Roadmap
+## 👤 Author
 
-Rate limiting for OTP attempts
+**Martín**
+Backend Engineer · NestJS · Security · Telecommunications
 
-Authentication audit logs
+---
 
-Refresh tokens
-
-Trusted device support
-
-2FA reset and recovery flow
-
-👤 Author
-
-Martín
-Backend · NestJS · Security · Telecommunications
-
-📄 License
+## 📄 License
 
 MIT License – Free to use for educational and demonstrative purposes.
