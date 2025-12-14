@@ -1,98 +1,218 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+🔐 Secure Authentication API – NestJS + JWT + Mandatory 2FA
+<p align="center"> <a href="https://nestjs.com" target="_blank"> <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" /> </a> </p> <p align="center"> Secure backend authentication API built with <b>NestJS</b>, implementing <b>JWT</b> and <b>mandatory Two-Factor Authentication (2FA)</b>. </p> <p align="center"> <img src="https://img.shields.io/badge/NestJS-11-red" /> <img src="https://img.shields.io/badge/Security-2FA%20Mandatory-green" /> <img src="https://img.shields.io/badge/License-MIT-blue" /> </p>
+📌 Overview
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This project is a production-grade authentication API built with Node.js and NestJS, implementing:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+JWT-based authentication
 
-## Description
+Mandatory Two-Factor Authentication (2FA)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+TOTP (RFC 6238)
 
-## Project setup
+QR delivery via email (SMTP)
 
-```bash
-$ pnpm install
-```
+The authentication flow follows corporate and regulated system standards, commonly used in financial systems, SOC platforms, and critical infrastructure.
 
-## Compile and run the project
+🚀 Key Features
 
-```bash
-# development
-$ pnpm run start
+User registration and login
 
-# watch mode
-$ pnpm run start:dev
+Mandatory 2FA for all users
 
-# production mode
-$ pnpm run start:prod
-```
+TOTP secret generation
 
-## Run tests
+QR code generation and email delivery
 
-```bash
-# unit tests
-$ pnpm run test
+OTP validation
 
-# e2e tests
-$ pnpm run test:e2e
+Temporary JWT (2FA pending)
 
-# test coverage
-$ pnpm run test:cov
-```
+Final JWT after OTP verification
 
-## Deployment
+Route protection using Guards
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Modular and scalable NestJS architecture
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+OWASP-aligned security practices
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+🧠 Authentication Architecture
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Authentication is split into two enforced steps:
 
-## Resources
+Primary credentials (email + password)
 
-Check out a few resources that may come in handy when working with NestJS:
+Second factor (OTP from authenticator app)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+❗ No final JWT is issued until both factors are validated.
 
-## Support
+🔄 Authentication Flow
+User Registration
+        ↓
+Login (email + password)
+        ↓
+Temporary JWT (2FA pending)
+        ↓
+OTP Verification
+        ↓
+Final JWT
+        ↓
+Access to protected endpoints
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+🔐 Main Endpoints
+Authentication
+Method	Endpoint	Description
+POST	/auth/register	User registration
+POST	/auth/login	Initial login (returns temporary token)
+POST	/auth/2fa/setup	Generates TOTP secret and sends QR by email
+POST	/auth/2fa/enable	Enables 2FA after OTP validation
+POST	/auth/2fa/verify-login	Verifies OTP and issues final JWT
+Protected Routes
 
-## Stay in touch
+All business endpoints require:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Valid JWT
 
-## License
+Completed 2FA process
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+@UseGuards(JwtAuthGuard, TwoFactorGuard)
+
+🛡️ Security Highlights
+
+Temporary JWT with expiration
+
+Final JWT only after OTP validation
+
+TOTP secrets never exposed via API
+
+QR sent via email as inline attachment (CID)
+
+Dedicated Guards for 2FA enforcement
+
+Clear separation between authentication and authorization
+
+🧩 Tech Stack
+
+Node.js
+
+NestJS
+
+TypeScript
+
+JWT
+
+Passport.js
+
+Speakeasy (TOTP)
+
+Nodemailer (SMTP)
+
+QRcode
+
+⚙️ Environment Variables
+
+Create a .env file at project root:
+
+PORT=3000
+
+JWT_SECRET=super_secret_key
+JWT_EXPIRES_IN=15m
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=gmail_app_password
+
+
+⚠️ Gmail requires App Passwords (regular passwords are not supported).
+
+▶️ Installation & Run
+pnpm install
+pnpm start:dev
+
+
+Application will be available at:
+
+http://localhost:3000
+
+🧪 Basic Testing
+Initial Login
+POST /auth/login
+
+
+Response:
+
+{
+  "twoFactorRequired": true,
+  "tempToken": "JWT_TEMPORARY"
+}
+
+OTP Verification
+POST /auth/2fa/verify-login
+Authorization: Bearer <TEMP_TOKEN>
+
+
+Body:
+
+{
+  "code": "123456"
+}
+
+
+Response:
+
+{
+  "accessToken": "JWT_FINAL"
+}
+
+📁 Project Structure (Simplified)
+src/
+├── auth/
+│   ├── guards/
+│   ├── strategies/
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+├── twofa/
+│   ├── twofactor.controller.ts
+│   ├── twofactor.service.ts
+├── qremail/
+│   ├── qremail.module.ts
+│   ├── qremail.service.ts
+├── users/
+├── app.module.ts
+
+🧠 Real-World Use Cases
+
+This architecture is suitable for:
+
+Financial platforms
+
+Corporate systems
+
+Critical infrastructure
+
+SOC / SIEM platforms
+
+Regulated backends
+
+🛣️ Roadmap
+
+Rate limiting for OTP attempts
+
+Authentication audit logs
+
+Refresh tokens
+
+Trusted device support
+
+2FA reset and recovery flow
+
+👤 Author
+
+Martín
+Backend · NestJS · Security · Telecommunications
+
+📄 License
+
+MIT License – Free to use for educational and demonstrative purposes.
