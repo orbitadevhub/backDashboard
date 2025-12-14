@@ -13,25 +13,27 @@ export class TwoFactorAuthService {
 
   async generateSecret(user: any) {
     const secret = speakeasy.generateSecret({
-      name: `MiApp (${user.email})`,
+      name: `Orbitadev (${user.email})`,
     });
 
     await this.usersService.update(user.id, {
       twoFactorSecret: secret.base32,
+      twoFactorEnabled: false,
     } as any);
 
-    if (!secret.otpauth_url) throw new Error('Failed to generate OTP auth URL');
-    const qrCode = await qrcode.toDataURL(secret.otpauth_url);
+    if (!secret.otpauth_url) {
+      throw new Error('Failed to generate OTP auth URL');
+    }
+
+    const qrCodeBase64 = await qrcode.toDataURL(secret.otpauth_url);
 
     return {
-      secret: secret.base32,
-      qrCode,
-      otpauthUrl: secret.otpauth_url,
+      qrCodeBase64, 
     };
   }
 
   async enable2FA(user: any, code: string) {
-    const freshUser = await this.usersService.findOne(user.id); // <-- NUEVO
+    const freshUser = await this.usersService.findOne(user.id);
 
     const isValid = speakeasy.totp.verify({
       secret: freshUser.twoFactorSecret,

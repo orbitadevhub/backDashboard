@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { TwoFAModule } from './twofa/twofactor.module';
 import { LogMiddleware } from './common/middleware/log.middleware';
+import { QremailModule } from './qremail/qremail.module';
 
 
 
@@ -29,6 +30,7 @@ import { LogMiddleware } from './common/middleware/log.middleware';
     AuthModule,
     ContactsModule,
     TwoFAModule,
+    QremailModule,
   ],
   controllers: [AppController],
   providers: [
