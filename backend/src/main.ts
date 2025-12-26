@@ -4,12 +4,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  console.log('DB URL RAW >>>', JSON.stringify(process.env.DATABASE_URL));
 
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['http://localhost:3001'],
+    origin: ['http://localhost:3001','https://back-dashboard-l3xopkpgd-orbitadevs-projects-4ec97c99.vercel.app/'],
     credentials: true,
   });
 
@@ -32,10 +31,6 @@ async function bootstrap() {
   );
 
   const port = process.env.PORT || 3000;
-
-  console.log('DATABASE_URL:', process.env.DATABASE_URL);
-  console.log('Listening on port:', port);
-
   await app.listen(port);
 }
 
