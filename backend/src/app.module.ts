@@ -1,30 +1,37 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
+
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 import { ClientModule } from './client/client.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { TwoFAModule } from './twofa/twofactor.module';
-import { LogMiddleware } from './common/middleware/log.middleware';
 import { QremailModule } from './qremail/qremail.module';
 
-
-
+import { LogMiddleware } from './common/middleware/log.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
+
     TypeOrmModule.forRootAsync({
       useFactory: typeOrmConfig,
       inject: [ConfigService],
     }),
+
     ClientModule,
     UsersModule,
     AuthModule,
@@ -33,12 +40,13 @@ import { QremailModule } from './qremail/qremail.module';
     QremailModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-  ],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LogMiddleware).forRoutes('2fa',);
+    consumer.apply(LogMiddleware).forRoutes({
+      path: '2fa/*',
+      method: RequestMethod.ALL,
+    });
   }
 }

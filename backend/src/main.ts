@@ -4,36 +4,22 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: [
-      'http://localhost:3001',
+  console.log('DB URL RAW >>>', JSON.stringify(process.env.DATABASE_URL));
 
-    ],
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-    ],
+  const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: ['http://localhost:3001'],
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
   });
 
   const config = new DocumentBuilder()
     .setTitle('OrvitaDev-APIs')
-    .setDescription(
-      'Docs de API para clientes administradores de de Apps que emplean forms'
-    )
+    .setDescription('Docs de API')
     .setVersion('1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'jwt'
-    )
+    .addBearerAuth()
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
@@ -42,13 +28,16 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    })
+    }),
   );
 
-  if (process.env.IS_OFFLINE) {
-    await app.listen(3000);
-  } else {
-    await app.init();
-  }
+  const port = process.env.PORT || 3000;
+
+  console.log('DATABASE_URL:', process.env.DATABASE_URL);
+  console.log('Listening on port:', port);
+
+  await app.listen(port);
 }
+
 bootstrap();
+
