@@ -17,6 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TwoFactorAuthService } from '../twofa/twofactor.service';
+import { QremailService } from 'src/qremail/qremail.service';
 
 @Controller('auth')
 export class AuthController {
@@ -25,20 +26,36 @@ export class AuthController {
     private readonly configService: ConfigService,
     private jwtService: JwtService,
     private readonly twoFAService: TwoFactorAuthService,
+    private readonly qremailService: QremailService
   ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Registro de usuario' })
   @ApiBody({ type: RegisterDto, description: 'Datos de registro' })
   @ApiResponse({ status: 200, description: 'Registro exitoso' })
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(
-      registerDto.email,
-      registerDto.password,
-      registerDto.lastName,
-      registerDto.firstName,
-      registerDto.roles
-    );
+  async register(@Body() registerDto: RegisterDto) {
+
+    try {
+       await this.authService.register(
+        registerDto.email,  
+        registerDto.password,
+        registerDto.lastName,
+        registerDto.firstName,
+        registerDto.roles
+      );
+      const qrCode = await this.twoFAService.generateSecret(registerDto.email);
+  
+      const send2FAQRCode = this.qremailService.send2FAQRCode(
+        registerDto.email,
+        qrCode.qrCodeBase64
+      );
+
+     return { message: `User with email ${registerDto.email} created successfully` };
+    } catch (error) {
+      throw new Error( error.message);
+    }
+
+
   }
 
   @Post('login')

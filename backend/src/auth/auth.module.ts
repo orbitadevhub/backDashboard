@@ -10,16 +10,20 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ContactsModule } from 'src/contacts/contacts.module';
 import { TwoFAModule } from 'src/twofa/twofactor.module';
 
+import { QremailModule } from 'src/qremail/qremail.module';
+
 @Module({
+  
   imports: [
     ConfigModule,
     UsersModule,
     ContactsModule,
+    QremailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: process.env.JWT_ACCESS_SECRET,
         signOptions: { expiresIn: '60m' },
       }),
       inject: [ConfigService],

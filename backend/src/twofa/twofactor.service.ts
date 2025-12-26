@@ -28,7 +28,7 @@ export class TwoFactorAuthService {
     const qrCodeBase64 = await qrcode.toDataURL(secret.otpauth_url);
 
     return {
-      qrCodeBase64, 
+      qrCodeBase64,
     };
   }
 
@@ -61,13 +61,17 @@ export class TwoFactorAuthService {
 
     if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
 
-    const token = this.jwtService.sign({
-      id: user.id,
-      email: user.email,
-      roles: user.roles,
-      isTwoFactorAuthenticated: true,
-    });
-
+    const token = this.jwtService.sign(
+      {
+        id: user.id,
+        email: user.email,
+        roles: user.roles,
+        isTwoFactorAuthenticated: true,
+      },
+      {
+        secret: process.env.JWT_SECRET,
+      }
+    );
     return { accessToken: token };
   }
 }

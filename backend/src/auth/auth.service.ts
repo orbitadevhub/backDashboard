@@ -65,17 +65,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password');
     }
 
-    if (user.twoFactorEnabled) {
-      return { requires2FA: true, email: user.email };
-    }
+    const tempToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        mfa: 'PENDING',
+      },
+      { expiresIn: '5m' }
+    );
 
     return {
-      accessTocken: this.jwtService.sign({
-        id: user.id,
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        roles: user.roles || ['USER'],
-      }),
+      mfaRequired: true,
+      tempToken,
     };
   }
 
