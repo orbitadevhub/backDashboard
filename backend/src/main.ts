@@ -8,9 +8,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['http://localhost:3001','https://back-dashboard-l3xopkpgd-orbitadevs-projects-4ec97c99.vercel.app/'],
-    credentials: true,
-  });
+  origin: [
+    'http://localhost:3001',
+    'https://back-dashboard-l3xopkpgd-orbitadevs-projects-4ec97c99.vercel.app',
+  ],
+  methods: 'GET,POST,PUT,DELETE,OPTIONS',
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+  ],
+  credentials: true,
+});
 
   const config = new DocumentBuilder()
     .setTitle('OrvitaDev-APIs')
