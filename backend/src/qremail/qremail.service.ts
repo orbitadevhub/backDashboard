@@ -7,15 +7,19 @@ export class QremailService {
 
   async send2FAQRCode(email: string, qrBase64: string) {
     await this.resend.emails.send({
-      from: process.env.MAIL_FROM!, 
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Activación de doble factor (2FA)',
       html: `
-        <h3>Activación de doble factor</h3>
-        <p>Escaneá este código con Google Authenticator o Authy:</p>
-        <img src="${qrBase64}" alt="QR 2FA" />
-        <p><strong>No compartas este código.</strong></p>
-      `,
+      <h3>Activación de doble factor</h3>
+      <p>Escaneá este código con Google Authenticator o Authy:</p>
+      <img 
+        src="${qrBase64}" 
+        alt="QR 2FA"
+        style="width:200px;height:200px"
+      />
+      <p><strong>No compartas este código.</strong></p>
+    `,
     });
   }
 }
