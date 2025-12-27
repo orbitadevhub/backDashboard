@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Resend } from 'resend';
-import { CloudinaryService } from 'src/config/cloudinary.service';
+import { CloudinaryService } from 'src/config/cloudinary/cloudinary.service';
 
 @Injectable()
 export class QremailService {

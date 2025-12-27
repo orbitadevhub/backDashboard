@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { QremailService } from './qremail.service';
-import { CloudinaryService } from 'src/config/cloudinary.service';
+import { CloudinaryModule } from 'src/config/cloudinary/cloudinary.module';
 
 @Module({
-  imports: [CloudinaryService],
+  imports: [CloudinaryModule],
   providers: [QremailService],
   exports: [QremailService],
 })
