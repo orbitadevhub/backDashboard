@@ -8,10 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-  origin: [
-    'http://localhost:3001',
-    'https://back-dashboard-l3xopkpgd-orbitadevs-projects-4ec97c99.vercel.app',
-  ],
+  origin: true,
   methods: 'GET,POST,PUT,DELETE,OPTIONS',
   allowedHeaders: [
     'Content-Type',
