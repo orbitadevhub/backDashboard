@@ -1,29 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class QremailService {
-  private transporter: nodemailer.Transporter;
-
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: Number(process.env.MAIL_PORT),
-      secure: process.env.MAIL_SECURE === 'true',
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-  }
+  private resend = new Resend(process.env.RESEND_API_KEY);
 
   async send2FAQRCode(email: string, qrBase64: string) {
     const base64Data = qrBase64.replace(/^data:image\/png;base64,/, '');
 
-    await this.transporter.sendMail({
+    await this.resend.emails.send({
       from: `"MiApp Seguridad" <${process.env.MAIL_USER}>`,
       to: email,
       subject: 'Activación de doble factor (2FA)',
@@ -37,8 +22,6 @@ export class QremailService {
         {
           filename: 'qrcode.png',
           content: base64Data,
-          encoding: 'base64',
-          cid: 'qrcode',
         },
       ],
     });
