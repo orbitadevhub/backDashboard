@@ -7,7 +7,15 @@ import {
   UseGuards,
   Body,
 } from '@nestjs/common';
-import { ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiBody,
+  ApiBearerAuth,
+  ApiResponse,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.Dto';
@@ -18,6 +26,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TwoFactorAuthService } from '../twofa/twofactor.service';
 import { QremailService } from 'src/qremail/qremail.service';
+import { Verify2FADto } from './dto/verify2FADto';
 
 @Controller('auth')
 export class AuthController {
@@ -31,31 +40,16 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Registro de usuario' })
-  @ApiBody({ type: RegisterDto, description: 'Datos de registro' })
-  @ApiResponse({ status: 200, description: 'Registro exitoso' })
-  async register(@Body() registerDto: RegisterDto) {
-
-    try {
-       await this.authService.register(
-        registerDto.email,  
-        registerDto.password,
-        registerDto.lastName,
-        registerDto.firstName,
-        registerDto.roles
-      );
-      const qrCode = await this.twoFAService.generateSecret(registerDto.email);
-  
-      const send2FAQRCode = this.qremailService.send2FAQRCode(
-        registerDto.email,
-        qrCode.qrCodeBase64
-      );
-
-     return { message: `User with email ${registerDto.email} created successfully` };
-    } catch (error) {
-      throw new Error( error.message);
-    }
-
-
+  @ApiBody({ type: RegisterDto })
+  @ApiCreatedResponse({ description: 'Usuario registrado correctamente' })
+  @ApiConflictResponse({ description: 'El usuario ya existe' })
+  @ApiBadRequestResponse({ description: 'Datos inválidos' })
+  async register(@Body() dto: RegisterDto) {
+    await this.authService.register(dto);
+    return {
+      message:
+        'Usuario registrado correctamente. Revise su email para activar 2FA.',
+    };
   }
 
   @Post('login')
@@ -121,8 +115,10 @@ export class AuthController {
   }
 
   
+  @UseGuards(AuthGuard('jwt-2fa'))
   @Post('2fa/verify')
-  verify2FA(@Body() { userId, code }: { userId: string; code: string }) {
-    return this.twoFAService.verifyCode(userId, code);
+  verify2FA(@Body() dto: Verify2FADto, @Req() req: any) {
+    const userId = req.user.id;
+    return this.twoFAService.verifyCode(dto.token, userId);
   }
 }

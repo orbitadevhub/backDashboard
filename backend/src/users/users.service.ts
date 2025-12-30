@@ -5,15 +5,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/updateProfileDto';
+import { ChangePasswordDto } from './dto/changePasswordDto';
+import { UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { Role } from 'src/auth/roles.enum';
 
 export const roundOfHashing = 10;
 @Injectable()
 export class UsersService {
+  async enableTwoFactor(userId: string) {
+    await this.userRepository.update(userId, {
+      twoFactorEnabled: true,
+    });
+  }
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>
@@ -22,7 +31,7 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     try {
       const email = createUserDto.email.toLowerCase().trim();
-      createUserDto.email.toLowerCase();
+
       const existingUser = await this.userRepository.findOne({
         where: { email },
       });
@@ -34,15 +43,12 @@ export class UsersService {
       if (!createUserDto.password) {
         throw new ConflictException('Password is required');
       }
-      const hashedPassword = await bcrypt.hash(
-        createUserDto.password,
-        roundOfHashing
-      );
 
       const newUser = this.userRepository.create({
         ...createUserDto,
         email,
-        password: hashedPassword,
+        password: createUserDto.password,
+        roles: [Role.USER],
       });
 
       return await this.userRepository.save(newUser);
@@ -55,6 +61,39 @@ export class UsersService {
         'Ocurrió un error al crear el usuario'
       );
     }
+  }
+  async getTwoFactorSecret(userId: string): Promise<string> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'twoFactorSecret', 'twoFactorEnabled'],
+    });
+
+    if (!user || !user.twoFactorSecret) {
+      throw new UnauthorizedException('2FA no está configurado');
+    }
+
+    return user.twoFactorSecret;
+  }
+  async findByIdWithTwoFactorSecret(id: string) {
+    return this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'twoFactorSecret', 'twoFactorEnabled'],
+    });
+  }
+
+  async findByEmailWithTwoFactor(email: string) {
+    return this.userRepository.findOne({
+      where: { email },
+      select: [
+        'id',
+        'email',
+        'firstName',
+        'lastName',
+        'roles',
+        'twoFactorEnabled',
+        'twoFactorSecret',
+      ],
+    });
   }
 
   async findAll() {
@@ -94,14 +133,15 @@ export class UsersService {
       return user;
     }
 
-    return this.userRepository.save({
+    const newUser = this.userRepository.create({
       googleId: googleUser.googleId,
       email: googleUser.email,
       firstName: googleUser.name,
       lastName: googleUser.name,
-      isVerified: true,
-      roles: googleUser.roles || ['USER'],
+      roles: [Role.USER],
     });
+
+    return await this.userRepository.save(newUser);
   }
 
   async findOneByEmail(email: string) {
@@ -146,48 +186,49 @@ export class UsersService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    try {
-      const user = await this.userRepository.findOne({
-        where: { id },
-      });
+  async update(id: string, dto: UpdateProfileDto) {
+    const user = await this.userRepository.findOne({ where: { id } });
 
-      if (!user) {
-        throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
-      }
-
-      if (updateUserDto.email) {
-        const email = updateUserDto.email.toUpperCase().trim();
-        const existingUser = await this.userRepository.findOne({
-          where: { email },
-        });
-
-        if (existingUser && existingUser.id !== id) {
-          throw new ConflictException(
-            'El nuevo email ya está registrado por otro usuario'
-          );
-        }
-
-        updateUserDto.email = email;
-      }
-
-      const updatedUser = await this.userRepository.save({
-        ...user,
-        ...updateUserDto,
-      });
-
-      const { password, ...result } = updatedUser;
-      return result;
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      console.error(`Error actualizando usuario ID ${id}:`, error);
-      throw new InternalServerErrorException('Error al actualizar el usuario');
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
+
+    if (dto.email) {
+      const email = dto.email.toLowerCase().trim();
+
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (existingUser && existingUser.id !== id) {
+        throw new ConflictException(
+          'El nuevo email ya está registrado por otro usuario'
+        );
+      }
+
+      dto.email = email;
+    }
+
+    const updatedUser = await this.userRepository.preload({
+      id,
+      ...dto,
+    });
+
+    if (!updatedUser) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+
+    await this.userRepository.save(updatedUser);
+
+    const { password, ...result } = updatedUser;
+    return result;
+  }
+
+  async setTwoFactorSecret(userId: string, secret: string) {
+    await this.userRepository.update(userId, {
+      twoFactorSecret: secret,
+      twoFactorEnabled: false,
+    });
   }
 
   async remove(id: string) {

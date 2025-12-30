@@ -7,65 +7,50 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Contact } from '../../contacts/entities/contact.entity';
+import { Role } from '../../auth/roles.enum';
+
+
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
-  @Column({
-    type: 'varchar',
-    length: 30,
-  })
+
+  @Column({ length: 30 })
   firstName: string;
 
-  @Column({
-    type: 'varchar',
-    length: 30,
-  })
+  @Column({ length: 30 })
   lastName: string;
 
-  @Column({
-    type: 'varchar',
-    length: 100,
-  })
+  @Column({ length: 100, unique: true })
   email: string;
 
-  @Column({
-    type: 'varchar',
-    length: 100,
-    nullable: true,
-  })
-  password: string;
+  @Column({ nullable: true })
+  password?: string;
 
   @Column({
-    type: 'varchar',
-    length: 100,
-    nullable: true,
+    type: 'enum',
+    enum: Role,
+    array: true,
+    default: [Role.USER],
   })
-  roles: string[];
+  roles: Role[];
 
   @Column({ nullable: true })
-  googleId: string;
+  googleId?: string;
 
   @Column({ default: false })
   twoFactorEnabled: boolean;
 
-  @Column({ nullable: true })
-  twoFactorSecret: string;
+  @Column({ nullable: true, select: false })
+  twoFactorSecret?: string;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Contact, (contact) => contact.owner, {
-    cascade: true,
-    eager: false,
-  })
+  @OneToMany(() => Contact, (contact) => contact.owner)
   contacts: Contact[];
 }

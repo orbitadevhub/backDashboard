@@ -2,12 +2,17 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import { RegisterDto } from './dto/register.Dto';
+import { TwoFactorAuthService } from 'src/twofa/twofactor.service';
+import { QremailService } from 'src/qremail/qremail.service';
+import { Verify2FADto } from './dto/verify2FADto';
 
 function removeAccents(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -17,38 +22,46 @@ function removeAccents(str: string): string {
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private qremailService: QremailService,
+    private jwtService: JwtService,
+    private twoFactorAuthService: TwoFactorAuthService
   ) {}
 
-  async register(
-    email: string,
-    password: string,
-    lastName: string,
-    firstName: string,
-    roles: string[] = ['USER']
-  ) {
-    const existUser = await this.usersService.findOneByEmail(email);
+  async register(dto: RegisterDto) {
+    const { email, password, firstName, lastName } = dto;
 
-    if (existUser) {
-      throw new NotFoundException(`User with email ${email} already exist`);
+    const exists = await this.usersService.findOneByEmail(email);
+    if (exists) {
+      throw new ConflictException(`User with email ${email} already exists`);
     }
 
-    const createdUser = await this.usersService.create({
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.usersService.create({
       email: removeAccents(email.toLowerCase()),
-      password,
-      lastName,
+      password: hashedPassword,
       firstName,
-      roles,
+      lastName,
+      roles: ['USER'],
+      twoFactorEnabled: false,
     });
 
-    return createdUser;
+    const { secret, qrCodeBase64 } =
+      await this.twoFactorAuthService.generateSecret(user);
+
+    await this.usersService.setTwoFactorSecret(user.id, secret);
+
+    await this.qremailService.send2FAQRCode(user.email, qrCodeBase64);
+
+    return {
+      message: 'Usuario registrado. Revise su correo para activar 2FA.',
+    };
   }
 
   async login(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(
       removeAccents(email.toLowerCase())
     );
-
     if (user?.googleId) {
       throw new UnauthorizedException(
         'This user logged in with Google. Use Google login.'
@@ -80,32 +93,33 @@ export class AuthService {
   }
 
   async login2FA(email: string, code: string) {
-    const user = await this.usersService.findOneByEmail(email);
+  const user = await this.usersService.findByEmailWithTwoFactor(email);
 
-    if (!user || !user.twoFactorEnabled) {
-      throw new UnauthorizedException('2FA is not enabled for this user');
-    }
-
-    const isValid = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: 'base32',
-      token: code,
-      window: 1,
-    });
-
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid 2FA code');
-    }
-
-    return {
-      accessTocken: this.jwtService.sign({
-        id: user.id,
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        roles: user.roles || ['USER'],
-      }),
-    };
+  if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+    throw new UnauthorizedException('2FA is not enabled for this user');
   }
+
+  const isValid = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: 'base32',
+    token: code,
+    window: 1,
+  });
+
+  if (!isValid) {
+    throw new UnauthorizedException('Invalid 2FA code');
+  }
+
+  return {
+    accessToken: this.jwtService.sign({
+      id: user.id,
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+      roles: user.roles,
+    }),
+  };
+}
+
 
   async generate2FASecret(userId: string) {
     const user = await this.usersService.findOne(userId);
@@ -131,22 +145,31 @@ export class AuthService {
     };
   }
 
-  async enable2FA(userId: string, code: string) {
-    const user = await this.usersService.findOne(userId);
+  async enable2FA(dto:Verify2FADto ,userId: string, code: string) {
+    const { token } = dto; 
+    const user = await this.usersService.findByIdWithTwoFactorSecret(userId);
+
+    if (!user || !user.twoFactorSecret) {
+      throw new UnauthorizedException(
+        '2FA no está configurado para este usuario'
+      );
+    }
 
     const isValid = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: user.twoFactorSecret, 
       encoding: 'base32',
-      token: code,
+      token,
       window: 1,
     });
 
     if (!isValid) {
       throw new UnauthorizedException('Invalid 2FA code');
     }
+    if (!isValid) {
+      throw new UnauthorizedException('Código 2FA inválido');
+    }
 
-    user.twoFactorEnabled = true;
-    await this.usersService.update(user.id, user);
+    await this.usersService.enableTwoFactor(userId);
 
     return { message: '2FA has been enabled successfully' };
   }

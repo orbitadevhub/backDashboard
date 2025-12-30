@@ -18,6 +18,6 @@ export const typeOrmConfig = (
       ? [join(__dirname, '/../**/*.entity.js')]
       : [join(__dirname, '/../**/*.entity.{ts,js}')],
 
-    synchronize: true,
+    synchronize: false,
   };
 };

@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { Jwt2FAStrategy } from './strategies/jwt2FA.strategy';
 import { ContactsModule } from 'src/contacts/contacts.module';
 import { TwoFAModule } from 'src/twofa/twofactor.module';
 
@@ -31,7 +32,7 @@ import { QremailModule } from 'src/qremail/qremail.module';
     TwoFAModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy, JwtStrategy],
+  providers: [AuthService, GoogleStrategy, JwtStrategy, Jwt2FAStrategy],
   exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

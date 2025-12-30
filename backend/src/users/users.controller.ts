@@ -14,7 +14,7 @@ import {
 import { ValidationPipe } from '@nestjs/common/pipes';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/updateProfileDto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import {
@@ -83,10 +83,10 @@ export class UsersController {
     description: 'User updated',
     type: User,
   })
-  @ApiBody({ type: UpdateUserDto })
+  @ApiBody({ type: UpdateProfileDto })
   async update(
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto
+    @Body() updateUserDto: UpdateProfileDto
   ): Promise<PublicUser> {
     return this.usersService.update(id, updateUserDto);
   }

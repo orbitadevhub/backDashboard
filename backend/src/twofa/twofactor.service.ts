@@ -3,6 +3,7 @@ import * as speakeasy from 'speakeasy';
 import * as qrcode from 'qrcode';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class TwoFactorAuthService {
@@ -11,15 +12,10 @@ export class TwoFactorAuthService {
     private jwtService: JwtService
   ) {}
 
-  async generateSecret(user: any) {
+  async generateSecret(user: { id: string; email: string }) {
     const secret = speakeasy.generateSecret({
       name: `Orbitadev (${user.email})`,
     });
-
-    await this.usersService.update(user.id, {
-      twoFactorSecret: secret.base32,
-      twoFactorEnabled: false,
-    } as any);
 
     if (!secret.otpauth_url) {
       throw new Error('Failed to generate OTP auth URL');
@@ -28,15 +24,16 @@ export class TwoFactorAuthService {
     const qrCodeBase64 = await qrcode.toDataURL(secret.otpauth_url);
 
     return {
+      secret: secret.base32,
       qrCodeBase64,
     };
   }
 
   async enable2FA(user: any, code: string) {
-    const freshUser = await this.usersService.findOne(user.id);
+    const freshUser = await this.usersService.getTwoFactorSecret(user.id);
 
     const isValid = speakeasy.totp.verify({
-      secret: freshUser.twoFactorSecret,
+      secret: freshUser,
       encoding: 'base32',
       token: code,
     });
@@ -44,34 +41,24 @@ export class TwoFactorAuthService {
     if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
 
     await this.usersService.update(user.id, {
-      isTwoFactorEnabled: true,
+      twoFactorEnabled: true,
     });
 
     return { message: '2FA Enabled' };
   }
 
-  async verifyCode(userId: string, code: string) {
-    const user = await this.usersService.findOne(userId);
+  async verifyCode(token: string, userId): Promise<boolean> {
 
-    const isValid = speakeasy.totp.verify({
+    const user = await this.usersService.findByIdWithTwoFactorSecret(userId);
+    if (!user || !user.twoFactorSecret) {
+      return false;
+    }
+
+    return speakeasy.totp.verify({
       secret: user.twoFactorSecret,
       encoding: 'base32',
-      token: code,
+      token,
+      window: 1,
     });
-
-    if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
-
-    const token = this.jwtService.sign(
-      {
-        id: user.id,
-        email: user.email,
-        roles: user.roles,
-        isTwoFactorAuthenticated: true,
-      },
-      {
-        secret: process.env.JWT_SECRET,
-      }
-    );
-    return { accessToken: token };
   }
 }

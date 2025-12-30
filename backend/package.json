@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node ./src/seeder.ts",
-    "prod:start": "pm2-runtime app.js"
+    "prod:start": "pm2-runtime app.js",
+    "typeorm": "typeorm-ts-node-commonjs"
   },
   "dependencies": {
     "@jest/globals": "^30.2.0",
