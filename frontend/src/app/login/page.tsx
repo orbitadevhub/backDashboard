@@ -69,7 +69,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + "/2fa/enable",
+        process.env.NEXT_PUBLIC_API_URL + "2fa/enable",
         {
           method: "POST",
           credentials: "include",
