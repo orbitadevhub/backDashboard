@@ -18,15 +18,16 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.Dto';
+import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TwoFactorAuthService } from '../twofa/twofactor.service';
-import { QremailService } from 'src/qremail/qremail.service';
-import { Verify2FADto } from './dto/verify2FADto';
+import { Verify2FADto } from './dto/verify2FA.dto';
+import { UnauthorizedException } from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
 
 @Controller('auth')
 export class AuthController {
@@ -35,7 +36,7 @@ export class AuthController {
     private readonly configService: ConfigService,
     private jwtService: JwtService,
     private readonly twoFAService: TwoFactorAuthService,
-    private readonly qremailService: QremailService
+    private readonly usersService: UsersService
   ) {}
 
   @Post('register')
@@ -114,11 +115,33 @@ export class AuthController {
     res.clearCookie('access_token').json({ message: 'Sesión cerrada' });
   }
 
-  
   @UseGuards(AuthGuard('jwt-2fa'))
   @Post('2fa/verify')
-  verify2FA(@Body() dto: Verify2FADto, @Req() req: any) {
+  async verify2FA(@Body() dto: Verify2FADto, @Req() req, @Res({ passthrough: true }) res: Response,) {
     const userId = req.user.id;
-    return this.twoFAService.verifyCode(dto.token, userId);
+
+    const isValid = await this.twoFAService.verifyCode(dto.token, userId);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    const user = await this.usersService.findOne(userId);
+
+    // 🔑 ACÁ se emite el JWT DEFINITIVO
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      roles: user.roles,
+      mfa: 'VERIFIED',
+    });
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 1000 * 60 * 60,
+    });
+
+    return { accessToken };
   }
 }

@@ -9,10 +9,10 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
-import { RegisterDto } from './dto/register.Dto';
+import { RegisterDto } from './dto/register.dto';
 import { TwoFactorAuthService } from 'src/twofa/twofactor.service';
 import { QremailService } from 'src/qremail/qremail.service';
-import { Verify2FADto } from './dto/verify2FADto';
+import { Verify2FADto } from './dto/verify2FA.dto';
 
 function removeAccents(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -91,35 +91,6 @@ export class AuthService {
       tempToken,
     };
   }
-
-  async login2FA(email: string, code: string) {
-  const user = await this.usersService.findByEmailWithTwoFactor(email);
-
-  if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
-    throw new UnauthorizedException('2FA is not enabled for this user');
-  }
-
-  const isValid = speakeasy.totp.verify({
-    secret: user.twoFactorSecret,
-    encoding: 'base32',
-    token: code,
-    window: 1,
-  });
-
-  if (!isValid) {
-    throw new UnauthorizedException('Invalid 2FA code');
-  }
-
-  return {
-    accessToken: this.jwtService.sign({
-      id: user.id,
-      email: user.email,
-      name: `${user.firstName} ${user.lastName}`,
-      roles: user.roles,
-    }),
-  };
-}
-
 
   async generate2FASecret(userId: string) {
     const user = await this.usersService.findOne(userId);

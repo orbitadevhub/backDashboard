@@ -24,7 +24,7 @@ import { QremailModule } from 'src/qremail/qremail.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '60m' },
       }),
       inject: [ConfigService],

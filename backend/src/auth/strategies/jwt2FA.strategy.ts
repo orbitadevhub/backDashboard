@@ -4,7 +4,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class Jwt2FAStrategy extends PassportStrategy(Strategy, 'jwt-2fa') {
+
+    
   constructor() {
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_SECRET,
@@ -12,6 +15,7 @@ export class Jwt2FAStrategy extends PassportStrategy(Strategy, 'jwt-2fa') {
   }
 
   async validate(payload: any) {
+    console.log('JWT-2FA PAYLOAD:', payload);
     if (payload.mfa !== 'PENDING') {
       throw new UnauthorizedException();
     }

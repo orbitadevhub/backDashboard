@@ -3,7 +3,6 @@ import * as speakeasy from 'speakeasy';
 import * as qrcode from 'qrcode';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class TwoFactorAuthService {
@@ -48,7 +47,6 @@ export class TwoFactorAuthService {
   }
 
   async verifyCode(token: string, userId): Promise<boolean> {
-
     const user = await this.usersService.findByIdWithTwoFactorSecret(userId);
     if (!user || !user.twoFactorSecret) {
       return false;
