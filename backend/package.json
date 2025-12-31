@@ -1,8 +1,8 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "API orbitadev backend app oficial",
+  "author": "Fernando Valdes",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
