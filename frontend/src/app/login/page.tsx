@@ -72,12 +72,13 @@ export default function Login() {
         process.env.NEXT_PUBLIC_API_URL + "auth/2fa/verify",
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${tempToken}`,
           },
           body: JSON.stringify({
-            code: mfaCode,
+            token: mfaCode,
           }),
         }
       );
@@ -87,9 +88,6 @@ export default function Login() {
         throw new Error(errorData.message || "Código MFA inválido");
       }
 
-      const data = await response.json();
-
-      localStorage.setItem("authToken", data.accessToken);
       router.push("/dashboard");
     } catch (error) {
       setError(
