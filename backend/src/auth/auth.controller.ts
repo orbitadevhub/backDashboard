@@ -23,11 +23,14 @@ import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TwoFactorAuthService } from '../twofa/twofactor.service';
 import { Verify2FADto } from './dto/verify2FA.dto';
 import { UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
+import { Role } from 'src/auth/roles.enum';
+import { Roles } from 'src/auth/decorators/roles.decorators';
+import { RoleGuard } from 'src/auth/guards/roles.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -102,7 +105,9 @@ export class AuthController {
   }
 
   @Get('profile')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(Role.ADMIN, Role.USER)
+  @ApiBearerAuth('jwt')
   getProfile(@Req() req) {
     return {
       user: req.user,
@@ -111,13 +116,20 @@ export class AuthController {
   }
 
   @Get('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt')
   logout(@Res() res: Response) {
     res.clearCookie('access_token').json({ message: 'Sesión cerrada' });
   }
 
-  @UseGuards(AuthGuard('jwt-2fa'))
   @Post('2fa/verify')
-  async verify2FA(@Body() dto: Verify2FADto, @Req() req, @Res({ passthrough: true }) res: Response,) {
+  @UseGuards(AuthGuard('jwt-2fa'))
+  @ApiBearerAuth('jwt')
+  async verify2FA(
+    @Body() dto: Verify2FADto,
+    @Req() req,
+    @Res({ passthrough: true }) res: Response
+  ) {
     const userId = req.user.id;
 
     const isValid = await this.twoFAService.verifyCode(dto.token, userId);
