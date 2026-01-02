@@ -46,17 +46,30 @@ export class TwoFactorAuthService {
     return { message: '2FA Enabled' };
   }
 
-  async verifyCode(token: string, userId): Promise<boolean> {
+  async verifyCode(token: string, userId: string): Promise<boolean> {
     const user = await this.usersService.findByIdWithTwoFactorSecret(userId);
+
     if (!user || !user.twoFactorSecret) {
       return false;
     }
 
-    return speakeasy.totp.verify({
+    const isValid = speakeasy.totp.verify({
       secret: user.twoFactorSecret,
       encoding: 'base32',
       token,
       window: 1,
     });
+
+    if (!isValid) {
+      return false;
+    }
+
+    if (!user.twoFactorEnabled) {
+      await this.usersService.update(user.id, {
+        twoFactorEnabled: true,
+      });
+    }
+
+    return true;
   }
 }

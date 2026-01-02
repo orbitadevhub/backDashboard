@@ -127,7 +127,6 @@ export class AuthController {
 
     const user = await this.usersService.findOne(userId);
 
-    // 🔑 ACÁ se emite el JWT DEFINITIVO
     const accessToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
