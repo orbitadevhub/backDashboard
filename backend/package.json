@@ -1,14 +1,14 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "API orbitadev backend app oficial",
+  "author": "Fernando Valdes",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "npx nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -19,9 +19,11 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node ./src/seeder.ts",
-    "prod:start": "pm2-runtime app.js"
+    "prod:start": "pm2-runtime app.js",
+    "typeorm": "typeorm-ts-node-commonjs"
   },
   "dependencies": {
+    "@jest/globals": "^30.2.0",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -37,6 +39,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
@@ -53,6 +56,7 @@
     "pm2": "^6.0.8",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.6.0",
     "rxjs": "^7.8.1",
     "serverless-http": "^4.0.0",
     "speakeasy": "^2.0.0",

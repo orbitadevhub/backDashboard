@@ -1,34 +1,32 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { TwoFactorAuthService } from './twofactor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { Enable2FADto } from './dto/twoFactor.dto';
+import { Role } from 'src/auth/roles.enum';
+import { Roles } from 'src/auth/decorators/roles.decorators';
+import { RoleGuard } from 'src/auth/guards/roles.guard';
 
+@ApiTags('Two-Factor Authentication')
 @Controller('2fa')
 export class TwoFactorController {
-  constructor(
-    private twoFAService: TwoFactorAuthService,
-  ) {}
+  constructor(private twoFAService: TwoFactorAuthService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(Role.ADMIN, Role.USER)
   @Get('generate')
   async generate2FA(@Req() req) {
-    const user = req.user;
-    return this.twoFAService.generateSecret(user);
+    return this.twoFAService.generateSecret(req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-2fa')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(Role.ADMIN, Role.USER)
+  @UseGuards(AuthGuard('jwt-2fa'))
   @Post('enable')
-  async enable2FA(@Req() req, @Body() body) {
-    console.log(body.code);
-    const user = req.user;
-    const { code } = body;
-
-    return this.twoFAService.enable2FA(user, code);
+  async enable2FA(@Req() req, @Body() dto: Enable2FADto) {
+    return this.twoFAService.enable2FA(req.user, dto.token);
   }
 }

@@ -51,4 +51,7 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   roles?: string[];
+
+  @ApiProperty()
+  twoFactorEnabled?: false;
 }

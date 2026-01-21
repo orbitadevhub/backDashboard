@@ -1,0 +1,54 @@
+/* Fondo general */
+html, body {
+  background-color: #121212 !important;
+}
+
+/* Contenedor principal */
+.swagger-ui {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* Top bar */
+.swagger-ui .topbar {
+  background-color: #1e1e1e !important;
+  border-bottom: 1px solid #333;
+}
+
+/* Texto general */
+.swagger-ui,
+.swagger-ui p,
+.swagger-ui h1,
+.swagger-ui h2,
+.swagger-ui h3,
+.swagger-ui h4,
+.swagger-ui h5,
+.swagger-ui h6,
+.swagger-ui label {
+  color: #686363 !important;
+}
+
+/* Bloques de endpoints */
+.swagger-ui .opblock {
+  background: #1e1e1e;
+  border: 1px solid #333;
+}
+
+/* GET */
+.swagger-ui .opblock.opblock-get {
+  background: rgba(97, 175, 254, 0.15);
+}
+
+/* POST */
+.swagger-ui .opblock.opblock-post {
+  background: rgba(73, 204, 144, 0.15);
+}
+
+/* Inputs */
+.swagger-ui input,
+.swagger-ui textarea,
+.swagger-ui select {
+  background-color: #2a2a2a !important;
+  color: #fff !important;
+  border: 1px solid #444;
+}

@@ -7,16 +7,30 @@ import {
   UseGuards,
   Body,
 } from '@nestjs/common';
-import { ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiBody,
+  ApiBearerAuth,
+  ApiResponse,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.Dto';
+import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TwoFactorAuthService } from '../twofa/twofactor.service';
+import { Verify2FADto } from './dto/verify2FA.dto';
+import { UnauthorizedException } from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
+import { Role } from 'src/auth/roles.enum';
+import { Roles } from 'src/auth/decorators/roles.decorators';
+import { RoleGuard } from 'src/auth/guards/roles.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -25,20 +39,21 @@ export class AuthController {
     private readonly configService: ConfigService,
     private jwtService: JwtService,
     private readonly twoFAService: TwoFactorAuthService,
+    private readonly usersService: UsersService
   ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Registro de usuario' })
-  @ApiBody({ type: RegisterDto, description: 'Datos de registro' })
-  @ApiResponse({ status: 200, description: 'Registro exitoso' })
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(
-      registerDto.email,
-      registerDto.password,
-      registerDto.lastName,
-      registerDto.firstName,
-      registerDto.roles
-    );
+  @ApiBody({ type: RegisterDto })
+  @ApiCreatedResponse({ description: 'Usuario registrado correctamente' })
+  @ApiConflictResponse({ description: 'El usuario ya existe' })
+  @ApiBadRequestResponse({ description: 'Datos inválidos' })
+  async register(@Body() dto: RegisterDto) {
+    await this.authService.register(dto);
+    return {
+      message:
+        'Usuario registrado correctamente. Revise su email para activar 2FA.',
+    };
   }
 
   @Post('login')
@@ -48,23 +63,6 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   login(@Body() { email, password }: LoginDto) {
     return this.authService.login(email, password);
-  }
-
-  @Post('login/2fa')
-  login2FA(@Body() { email, code }: { email: string; code: string }) {
-    return this.authService.login2FA(email, code);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('2fa/generate')
-  generate2FA(@Req() { user }) {
-    return this.authService.generate2FASecret(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('2fa/enable')
-  enable2FA(@Req() { user }, @Body() { code }) {
-    return this.authService.enable2FA(user.id, code);
   }
 
   @Get('google')
@@ -107,7 +105,9 @@ export class AuthController {
   }
 
   @Get('profile')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(Role.ADMIN, Role.USER)
+  @ApiBearerAuth('jwt')
   getProfile(@Req() req) {
     return {
       user: req.user,
@@ -116,13 +116,43 @@ export class AuthController {
   }
 
   @Get('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt')
   logout(@Res() res: Response) {
     res.clearCookie('access_token').json({ message: 'Sesión cerrada' });
   }
 
-  
   @Post('2fa/verify')
-  verify2FA(@Body() { userId, code }: { userId: string; code: string }) {
-    return this.twoFAService.verifyCode(userId, code);
+  @UseGuards(AuthGuard('jwt-2fa'))
+  @ApiBearerAuth('jwt')
+  async verify2FA(
+    @Body() dto: Verify2FADto,
+    @Req() req,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const userId = req.user.id;
+
+    const isValid = await this.twoFAService.verifyCode(dto.token, userId);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    const user = await this.usersService.findOne(userId);
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      roles: user.roles,
+      mfa: 'VERIFIED',
+    });
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 1000 * 60 * 60,
+    });
+
+    return { accessToken };
   }
 }
