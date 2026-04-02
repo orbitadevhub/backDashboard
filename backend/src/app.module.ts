@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { TwoFAModule } from './twofa/twofactor.module';
 import { QremailModule } from './qremail/qremail.module';
+import {SupabaseModule} from "./supabase/supabase.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { QremailModule } from './qremail/qremail.module';
     ContactsModule,
     TwoFAModule,
     QremailModule,
+    SupabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
