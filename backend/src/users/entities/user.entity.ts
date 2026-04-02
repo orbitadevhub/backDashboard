@@ -45,7 +45,14 @@ export class User {
   @Column({ nullable: true, select: false })
   twoFactorSecret?: string;
 
+<<<<<<< HEAD
+  @Column({ default: false })
+  isTwoFactorEnabled: boolean;
+
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+=======
   @CreateDateColumn()
+>>>>>>> b2390c1fad995188252c9f9cb62c49e447a647f9
   createdAt: Date;
 
   @UpdateDateColumn()
