@@ -387,7 +387,7 @@ POST /files/upload
    * tamaño
 4. Se genera un nombre único (`UUID`)
 5. El archivo se sube a Supabase Storage (bucket: `documents`)
-6. Se guarda metadata en PostgreSQL:
+6. Se guarda metadata en PostgreSQL neonDB:
 
    * nombre original
    * path
@@ -465,6 +465,7 @@ curl -X POST http://localhost:3000/files/upload \
 * Supabase Storage
 * PostgreSQL
 * Multer
+* NeonDB
 
 ---
 
