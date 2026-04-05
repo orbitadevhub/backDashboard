@@ -71,11 +71,11 @@ export class SupabaseService {
       this.logger.log(`Upload successful: ${uniqueFileName}`);
 
       const sendData = await this.fileRepo.save({
-        filename: originalName, // nombre original
+        filename: originalName,
         mimetype: contentType,
         size,
-        storagePath: uniqueFileName, // 👈 ESTE ES EL FIX
-        path: uniqueFileName, // opcional (si lo usás)
+        storagePath: uniqueFileName, 
+        path: uniqueFileName, 
         destination,
       });
 
