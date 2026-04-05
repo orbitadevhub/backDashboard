@@ -1,16 +1,22 @@
 // supabase.service.ts
-import { Injectable, Logger } from "@nestjs/common";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseError } from "./supabase.types";
-import { createSupabaseClient } from "../config/supabase.config";
+import { Injectable, Logger } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseError } from './supabase.types';
+import { createSupabaseClient } from '../config/supabase.config';
+import { FileEntity } from './entities/supabase.entity';
+import { InjectRepository } from '@nestjs/typeorm/dist/common/typeorm.decorators';
+import { Repository } from 'typeorm/repository/Repository';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class SupabaseService {
+  @InjectRepository(FileEntity)
+  private readonly fileRepo: Repository<FileEntity>;
   private readonly client: SupabaseClient = createSupabaseClient();
   private readonly logger = new Logger(SupabaseService.name);
 
   constructor() {
-    this.logger.log("Supabase client initialized");
+    this.logger.log('Supabase client initialized');
   }
 
   getClient(): SupabaseClient {
@@ -26,8 +32,8 @@ export class SupabaseService {
       return await fn();
     } catch (error) {
       if (retries === 0) {
-        this.logger.error("Max retries reached", error);
-        throw new SupabaseError("Operation failed after retries", error);
+        this.logger.error('Max retries reached', error);
+        throw new SupabaseError('Operation failed after retries', error);
       }
 
       this.logger.warn(`Retrying... attempts left: ${retries}`);
@@ -42,23 +48,38 @@ export class SupabaseService {
     bucket: string,
     fileName: string,
     buffer: Buffer,
-    contentType: string
+    contentType: string,
+    size: number,
+    originalName: string,
+    path?: string,
+    destination?: string
   ) {
     return this.retry(async () => {
-      this.logger.log(`Uploading file: ${fileName}`);
+      const uniqueFileName = `uploads/${randomUUID()}-${fileName}`;
+
+      this.logger.log(`Uploading file: ${uniqueFileName}`);
 
       const { error } = await this.client.storage
         .from(bucket)
-        .upload(fileName, buffer, { contentType });
+        .upload(uniqueFileName, buffer, { contentType });
 
       if (error) {
-        this.logger.error("Upload failed", error);
+        this.logger.error('Upload failed', error);
         throw error;
       }
 
-      this.logger.log(`Upload successful: ${fileName}`);
+      this.logger.log(`Upload successful: ${uniqueFileName}`);
 
-      return { fileName };
+      const sendData = await this.fileRepo.save({
+        filename: originalName, // nombre original
+        mimetype: contentType,
+        size,
+        storagePath: uniqueFileName, // 👈 ESTE ES EL FIX
+        path: uniqueFileName, // opcional (si lo usás)
+        destination,
+      });
+
+      return sendData;
     });
   }
 
@@ -69,7 +90,7 @@ export class SupabaseService {
         .createSignedUrl(path, expiresIn);
 
       if (error) {
-        this.logger.error("Signed URL error", error);
+        this.logger.error('Signed URL error', error);
         throw error;
       }
 

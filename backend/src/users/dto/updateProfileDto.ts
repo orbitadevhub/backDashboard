@@ -23,11 +23,7 @@ export class UpdateProfileDto {
 
   @ApiProperty()
   googleId?: string;
-<<<<<<< HEAD:backend/src/users/dto/update-user.dto.ts
 
   @IsOptional()
   isTwoFactorEnabled?: boolean;
 }
-=======
-}
->>>>>>> b2390c1fad995188252c9f9cb62c49e447a647f9:backend/src/users/dto/updateProfileDto.ts

@@ -128,6 +128,8 @@ All business endpoints require:
 * Speakeasy (TOTP)
 * Nodemailer (SMTP)
 * QRcode
+* Cloudinary
+* Supabase
 
 ---
 
@@ -136,16 +138,33 @@ All business endpoints require:
 Create a `.env` file at project root:
 
 ```env
-PORT=3000
-
-JWT_SECRET=super_secret_key
-JWT_EXPIRES_IN=15m
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=dfgdgdggr
+GOOGLE_CALLBACK_URL=
 
 MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
+MAIL_PORT=564987
 MAIL_SECURE=false
-MAIL_USER=your_email@gmail.com
-MAIL_PASS=gmail_app_password
+MAIL_USER=tu_correo@gmail.com
+MAIL_PASS=tu_app_password
+
+SUPABASE_URL=
+
+FRONTEND_SUCCESS_URL=
+IS_OFFLINE=
+
+JWT_SECRET=
+
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASS="[PASSWORD]"
+DATABASE_NAME=postgres
+DATABASE_URL="postgresql://postgres:[PASSWORD]@localhost:5432/postgres"
+
+CLOUDINARY_CLOUD_NAME=jiknedf8
+CLOUDINARY_API_KEY=823798729837493847
+CLOUDINARY_API_SECRET=sdkflnsldkfnlsdnf
 ```
 
 > ⚠️ Gmail **requires App Passwords** (regular passwords are not supported).
@@ -251,6 +270,216 @@ This architecture is suitable for:
 * Refresh tokens
 * Trusted device support
 * 2FA reset and recovery flow
+
+
+# 📄 Document Upload Service (NestJS + Supabase)
+
+## 🧠 Overview
+
+Este servicio permite subir archivos (PDF, DOC/DOCX) desde un cliente (frontend o Postman) hacia un backend desarrollado en NestJS, almacenarlos en **Supabase Storage**, y registrar su metadata en base de datos PostgreSQL.
+
+---
+
+## 🏗️ Arquitectura
+
+```txt
+Client (Frontend / Postman)
+        ↓
+NestJS Backend (FileInterceptor + Service)
+        ↓
+Supabase Storage (archivos)
+        ↓
+PostgreSQL (metadata NEONDB)
+```
+
+---
+
+## 📁 Estructura 
+
+```txt
+/src
+  /files
+    files.controller.ts     # Endpoint HTTP
+    files.module.ts         # Módulo de archivos
+
+  /supabase
+    supabase.service.ts     # Lógica de integración con Supabase
+    supabase.module.ts      # Módulo global
+    supabase.config.ts      # Configuración del cliente
+
+  /config
+    (env, cloudinary opcional)
+
+main.ts
+app.module.ts
+```
+
+---
+
+## ⚙️ Componentes principales
+
+### 📌 FilesController
+
+Responsable de exponer el endpoint HTTP para subir archivos.
+
+* Ruta: `POST /files/upload`
+* Usa `FileInterceptor` (Multer)
+* Recibe archivos tipo `multipart/form-data`
+
+---
+
+### 📌 SupabaseService
+
+Encapsula la lógica de interacción con Supabase:
+
+* Upload de archivos a Storage
+* Generación de URLs firmadas
+* Manejo de errores y retry
+
+---
+
+### 📌 Supabase Config
+
+Inicializa el cliente de Supabase usando variables de entorno:
+
+* `SUPABASE_URL`
+* `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+## 🚀 Endpoint: Upload de documentos
+
+### 🔗 URL
+
+```http
+POST /files/upload
+```
+
+---
+
+### 📥 Request
+
+**Content-Type:** `multipart/form-data`
+
+| Campo | Tipo | Descripción            |
+| ----- | ---- | ---------------------- |
+| file  | File | Archivo PDF o DOC/DOCX |
+
+---
+
+### 📤 Response
+
+```json
+{
+  "fileName": "uuid-nombre-original.pdf"
+}
+```
+
+---
+
+## 🔄 Flujo completo
+
+1. El cliente envía un archivo usando `multipart/form-data`
+2. NestJS intercepta el archivo con `FileInterceptor`
+3. Se valida:
+
+   * tipo MIME
+   * tamaño
+4. Se genera un nombre único (`UUID`)
+5. El archivo se sube a Supabase Storage (bucket: `documents`)
+6. Se guarda metadata en PostgreSQL:
+
+   * nombre original
+   * path
+   * tipo MIME
+   * tamaño
+7. Se devuelve el identificador del archivo
+
+---
+
+## 🔐 Seguridad
+
+* Validación de tipo de archivo (PDF/DOCX)
+* Límite de tamaño (ej: 5MB)
+* Uso de bucket privado
+* Acceso mediante Signed URLs
+* Variables sensibles manejadas por `.env`
+
+---
+
+## 📦 Variables de entorno
+
+```env
+SUPABASE_URL=your_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+---
+
+## 🧪 Testing
+
+### Con Postman
+
+* Método: `POST`
+* URL: `http://localhost:3000/files/upload`
+* Body → `form-data`
+
+  * key: `file`
+  * type: File
+
+---
+
+### Con curl
+
+```bash
+curl -X POST http://localhost:3000/files/upload \
+  -F "file=@/ruta/archivo.pdf"
+```
+
+---
+
+## ⚠️ Errores comunes
+
+| Error            | Causa                        |
+| ---------------- | ---------------------------- |
+| 404 Not Found    | Módulo no importado          |
+| Unexpected field | nombre incorrecto del campo  |
+| Bucket not found | bucket no creado en Supabase |
+| Missing env vars | variables no definidas       |
+
+---
+
+## 📈 Mejoras futuras
+
+* Validación por magic numbers (anti spoofing)
+* Integración con JWT (usuario autenticado)
+* Upload directo con signed URL
+* Logging centralizado
+* Auditoría de accesos
+
+---
+
+## 🧠 Tecnologías
+
+* NestJS
+* Supabase Storage
+* PostgreSQL
+* Multer
+
+---
+
+## 📌 Estado
+
+✔ Endpoint funcional
+✔ Upload operativo
+✔ Integración con Supabase completa
+
+---
+
+## 👨‍💻 Autor
+
+Proyecto backend orientado a buenas prácticas, seguridad y arquitectura escalable.
+
 
 ---
 
