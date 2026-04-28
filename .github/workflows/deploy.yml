@@ -2,7 +2,8 @@ name: CI/CD Docker
 
 on:
   push:
-    branches: ['main']
+    branches:
+      - main
 
 jobs:
   build-and-push:
@@ -19,7 +20,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build image
-        run: docker build -t orbitadev/backend-app:latest .
+        run: docker build -t orbitadev/backend-app:latest ./backend
 
       - name: Push image
         run: docker push orbitadev/backend-app:latest
