@@ -1,10 +1,25 @@
-name: debug
+name: CI/CD Docker
 
 on:
   push:
+    branches: ['main']
 
 jobs:
-  test:
+  build-and-push:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "ok"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build image
+        run: docker build -t orbitadev/backend-app:latest .
+
+      - name: Push image
+        run: docker push orbitadev/backend-app:latest
