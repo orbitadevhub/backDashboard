@@ -67,11 +67,11 @@ export class AuthService {
         'This user logged in with Google. Use Google login.'
       );
     }
-
+    
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
-
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
