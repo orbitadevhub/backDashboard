@@ -38,10 +38,9 @@ export default function Dashboard() {
   ];
 
   const toggleSelection = (
-    
     item: string,
     selectedItems: string[],
-    setSelectedItems: (items: string[]) => void
+    setSelectedItems: (items: string[]) => void,
   ) => {
     if (selectedItems.includes(item)) {
       setSelectedItems(selectedItems.filter((i) => i !== item));
@@ -68,8 +67,8 @@ export default function Dashboard() {
 
     try {
       // Build the prompt with all the form data
-      let prompt = `Genera un email ${selectedTones.length > 0 ? `con tono ${selectedTones.join(', ')} ` : ''}`;
-      prompt += `${selectedTopics.length > 0 ? `sobre ${selectedTopics.join(', ')} ` : ''}`;
+      let prompt = `Genera un email ${selectedTones.length > 0 ? `con tono ${selectedTones.join(", ")} ` : ""}`;
+      prompt += `${selectedTopics.length > 0 ? `sobre ${selectedTopics.join(", ")} ` : ""}`;
       prompt += `para ${recipient}. `;
 
       if (subject.trim()) {
@@ -82,15 +81,17 @@ export default function Dashboard() {
         prompt += ` Esto es en respuesta al siguiente email: "${originalEmailText}"`;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/email-response`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}ai`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },
         body: JSON.stringify({
-          clientEmail: recipient.includes('@') ? recipient : 'client@example.com',
-          prompt: prompt
+          clientEmail: recipient.includes("@")
+            ? recipient
+            : "client@example.com",
+          prompt: prompt,
         }),
       });
 
@@ -99,11 +100,14 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
-
-      setGeneratedEmail(data.content || 'Email generado exitosamente');
+      setGeneratedEmail(data || "Email generado exitosamente");
     } catch (err) {
-      console.error('Error generating email:', err);
-      setError(err instanceof Error ? err.message : 'Error al generar el email. Por favor, intenta nuevamente.');
+      console.error("Error generating email:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al generar el email. Por favor, intenta nuevamente.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -138,10 +142,11 @@ export default function Dashboard() {
                     onClick={() =>
                       toggleSelection(topic, selectedTopics, setSelectedTopics)
                     }
-                    className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${selectedTopics.includes(topic)
+                    className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                      selectedTopics.includes(topic)
                         ? "bg-blue-100 border-blue-300 text-blue-700"
                         : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 hover:text-blue-600"
-                      }`}
+                    }`}
                   >
                     {topic}
                   </button>
@@ -161,10 +166,11 @@ export default function Dashboard() {
                     onClick={() =>
                       toggleSelection(tone, selectedTones, setSelectedTones)
                     }
-                    className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${selectedTones.includes(tone)
+                    className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                      selectedTones.includes(tone)
                         ? "bg-blue-100 border-blue-300 text-blue-700"
                         : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 hover:text-blue-600"
-                      }`}
+                    }`}
                   >
                     {tone}
                   </button>
@@ -222,12 +228,14 @@ export default function Dashboard() {
                 </span>
                 <button
                   onClick={() => setReplyToSpecific(!replyToSpecific)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${replyToSpecific ? "bg-orange-500" : "bg-gray-300"
-                    }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    replyToSpecific ? "bg-orange-500" : "bg-gray-300"
+                  }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${replyToSpecific ? "translate-x-6" : "translate-x-1"
-                      }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      replyToSpecific ? "translate-x-6" : "translate-x-1"
+                    }`}
                   />
                 </button>
               </div>
@@ -258,12 +266,13 @@ export default function Dashboard() {
               <button
                 onClick={generateEmail}
                 disabled={isLoading}
-                className={`px-8 py-3 rounded-full font-medium transition-colors ${isLoading
-                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                className={`px-8 py-3 rounded-full font-medium transition-colors ${
+                  isLoading
+                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
               >
-                {isLoading ? 'Generando...' : 'Generar Email'}
+                {isLoading ? "Generando..." : "Generar Email"}
               </button>
             </div>
 
@@ -273,18 +282,22 @@ export default function Dashboard() {
                 Texto sugerido para el email
               </h2>
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className={`${generatedEmail ? 'text-gray-800' : 'text-gray-400'} mb-4 whitespace-pre-wrap`}>
-                  {generatedEmail || 'El email generado aparecerá aquí después de hacer clic en "Generar Email"'}
+                <div
+                  className={`${generatedEmail ? "text-gray-800" : "text-gray-400"} mb-4 whitespace-pre-wrap`}
+                >
+                  {generatedEmail ||
+                    'El email generado aparecerá aquí después de hacer clic en "Generar Email"'}
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex space-x-3">
                     <button
-                      onClick={() => setGeneratedEmail('')}
+                      onClick={() => setGeneratedEmail("")}
                       disabled={!generatedEmail}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${generatedEmail
-                          ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-                          : 'text-gray-400 border border-gray-300 cursor-not-allowed'
-                        }`}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        generatedEmail
+                          ? "text-blue-600 border border-blue-600 hover:bg-blue-50"
+                          : "text-gray-400 border border-gray-300 cursor-not-allowed"
+                      }`}
                     >
                       <Trash2 size={16} />
                       <span>Eliminar</span>
@@ -296,20 +309,22 @@ export default function Dashboard() {
                         }
                       }}
                       disabled={!generatedEmail}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${generatedEmail
-                          ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-                          : 'text-gray-400 border border-gray-300 cursor-not-allowed'
-                        }`}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        generatedEmail
+                          ? "text-blue-600 border border-blue-600 hover:bg-blue-50"
+                          : "text-gray-400 border border-gray-300 cursor-not-allowed"
+                      }`}
                     >
                       <Copy size={16} />
                       <span>Copiar</span>
                     </button>
                     <button
                       disabled={!generatedEmail}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${generatedEmail
-                          ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-                          : 'text-gray-400 border border-gray-300 cursor-not-allowed'
-                        }`}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        generatedEmail
+                          ? "text-blue-600 border border-blue-600 hover:bg-blue-50"
+                          : "text-gray-400 border border-gray-300 cursor-not-allowed"
+                      }`}
                       onClick={() => {
                         setShowSaveNotification(true);
                         setGeneratedEmail("");
@@ -332,7 +347,7 @@ export default function Dashboard() {
             {/* Send email Button */}
             <div className="flex justify-end">
               <button
-                className={`px-8 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[150px] ${isSending ? 'cursor-not-allowed opacity-70' : ''}`}
+                className={`px-8 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[150px] ${isSending ? "cursor-not-allowed opacity-70" : ""}`}
                 disabled={isSending || !generatedEmail}
                 onClick={() => {
                   setIsSending(true);
@@ -352,12 +367,28 @@ export default function Dashboard() {
                 }}
               >
                 {isSending && (
-                  <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
                   </svg>
                 )}
-                {isSending ? 'Enviando...' : 'Enviar Email'}
+                {isSending ? "Enviando..." : "Enviar Email"}
               </button>
             </div>
             {/* Notification */}
